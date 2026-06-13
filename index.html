@@ -3,29 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>FitPro AI | Elite Tracker SaaS</title>
+  <title>FitPro AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
-    body { background: #030307; font-family: 'DM Sans', sans-serif; color: #f8fafc; overflow-x: hidden; }
-    input, select, textarea, button { font-family: 'DM Sans', sans-serif; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #060610; font-family: 'DM Sans', 'Segoe UI', sans-serif; color: #f1f5f9; overflow-x: hidden; }
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
     ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 99px; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .fade-in { animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    .premium-blur { backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #8b5cf644; border-radius: 99px; }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in { animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     .meal-chip-scroll { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 4px; }
     .meal-chip-scroll::-webkit-scrollbar { display: none; }
   </style>
@@ -33,453 +31,604 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-  
-  // Firebase Initialize Systems Matrix
-  const firebaseConfig = {
-    apiKey: "AIzaSyB8ipQog_VUan22FjDMIKfUng-LB0Bt6_E",
-    authDomain: "fitproai-fa5ec.firebaseapp.com",
-    projectId: "fitproai-fa5ec",
-    storageBucket: "fitproai-fa5ec.firebasestorage.app",
-    messagingSenderId: "735401094599",
-    appId: "1:735401094599:web:588d43769d71793baefde2"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-  const auth = firebase.auth();
-  
-  const ADMIN_EMAIL = "soulom13@gmail.com"; 
-  const WHATSAPP = "917820961204";
-  
-  const { useState, useEffect, useRef } = React;
-  
-  const T = {
-    bg: "#030307", bgCard: "rgba(18, 18, 29, 0.45)", bgInput: "#090912", border: "rgba(255, 255, 255, 0.06)",
-    accent: "#e2b867", mint: "#10b981", cyan: "#0ea5e9", rose: "#f43f5e", text: "#f8fafc", muted: "#64748b",
-    gradGold: "linear-gradient(135deg, #f59e0b, #e2b867)"
-  };
-    const today = () => new Date().toISOString().split("T")[0];
-  const fmtDate = d => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-  const uid = () => Math.random().toString(36).slice(2, 8).toUpperCase();
-  const clamp = (v, mn, mx) => Math.max(mn, Math.min(mx, v));
-  
-  function calcBMI(w, h) { if (!w || !h) return 0; return +(w / ((h / 100) ** 2)).toFixed(1); }
-  function bmiLabel(b) { if (b < 18.5) return ["Underweight Tier", T.cyan]; if (b < 25) return ["Optimal Baseline", T.mint]; if (b < 30) return ["Overweight Limit", T.accent]; return ["Obese Scale Range", T.rose]; }
-  
-  function calcCalGoal(w, h, age, gender, activity, goal) {
-    if (!w) return 2000;
-    const bmr = gender === "Female" ? 10 * w + 6.25 * h - 5 * age - 161 : 10 * w + 6.25 * h - 5 * age + 5;
-    const af = { Sedentary: 1.2, Light: 1.375, Moderate: 1.55, Active: 1.725, VeryActive: 1.9 }[activity] || 1.55;
-    const tdee = bmr * af;
-    const adj = { "Fat Loss": -500, "Cutting": -600, "Muscle Gain": 350, "Bulking": 500, "Strength": 250, "Maintain": 0 }[goal] || 0;
-    return Math.round(tdee + adj);
+
+// ─── FIREBASE SYSTEM DATABASE PARAMETERS ──────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyB8ipQog_VUan22FjDMIKfUng-LB0Bt6_E",
+  authDomain: "fitproai-fa5ec.firebaseapp.com",
+  projectId: "fitproai-fa5ec",
+  storageBucket: "fitproai-fa5ec.firebasestorage.app",
+  messagingSenderId: "735401094599",
+  appId: "1:735401094599:web:588d43769d71793baefde2"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+const ADMIN_EMAIL = "soulom13@gmail.com";
+const WHATSAPP = "917820961204";
+
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─── HIGH END GRADIENT CODES DESIGN TOKENS ───────────────────────────────────
+const T = {
+  bg:"#060610", bg2:"#0d0d1f", bg3:"#12122a",
+  card:"rgba(255,255,255,0.04)", border:"rgba(255,255,255,0.08)",
+  purple:"#8b5cf6", pink:"#ec4899", green:"#10b981", cyan:"#06b6d4",
+  amber:"#f59e0b", red:"#ef4444", text:"#f1f5f9", muted:"#94a3b8", dim:"#475569",
+  grad:"linear-gradient(135deg,#8b5cf6,#ec4899)",
+  gradGreen:"linear-gradient(135deg,#10b981,#06b6d4)",
+  r:"14px", rLg:"20px", font:"'DM Sans','Segoe UI',sans-serif"
+};
+    // ─── STRUCTURAL SYSTEM ALGORITHMS & MATHEMATICAL FILTERS ──────────────────────
+const today = () => new Date().toISOString().split("T")[0];
+const fmtDate = d => new Date(d).toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+const uid = () => Math.random().toString(36).slice(2,10).toUpperCase();
+const clamp = (v,mn,mx) => Math.max(mn,Math.min(mx,v));
+
+function calcBMI(w,h){ if(!w||!h) return 0; return +(w/((h/100)**2)).toFixed(1); }
+function bmiLabel(b){ if(b<18.5) return["Underweight",T.cyan]; if(b<25) return["Normal",T.green]; if(b<30) return["Overweight",T.amber]; return["Obese",T.red]; }
+
+function calcCalGoal(w,h,age,gender,activity,goal){
+  if(!w) return 2000;
+  const bmr = gender==="Female"?10*w+6.25*h-5*age-161:10*w+6.25*h-5*age+5;
+  const af = {Sedentary:1.2,Light:1.375,Moderate:1.55,Active:1.725,VeryActive:1.9}[activity]||1.55;
+  const tdee = bmr*af;
+  const adj = {"Fat Loss":-500,Cutting:-600,"Muscle Gain":300,Bulking:500,Strength:200,Maintain:0}[goal]||0;
+  return Math.round(tdee+adj);
+}
+
+function calcProtein(w,goal){
+  const mul = {"Muscle Gain":2.2,Bulking:2.0,Strength:2.0,Cutting:2.4,"Fat Loss":1.8,Maintain:1.6}[goal]||1.8;
+  return Math.round((w||70)*mul);
+}
+
+const INDIAN_FOODS = [
+  {name:"Dal Makhani (1 katori)",cal:198,p:9,c:24,f:7}, {name:"Roti/Chapati (1 piece)",cal:80,p:3,c:15,f:1},
+  {name:"Chawal/Rice (1 katori)",cal:206,p:4,c:45,f:0}, {name:"Paneer (100g)",cal:296,p:18,c:3,f:24},
+  {name:"Poha (1 plate)",cal:244,p:5,c:48,f:3}, {name:"Chole (1 katori)",cal:269,p:14,c:45,f:4},
+  {name:"Dahi/Curd (1 katori)",cal:98,p:6,c:9,f:3}, {name:"Egg (1 whole)",cal:78,p:6,c:1,f:5},
+  {name:"Egg White (1)",cal:17,p:4,c:0,f:0}, {name:"Chicken Breast (100g)",cal:165,p:31,c:0,f:4}
+];
+
+const EXERCISES = {
+  Chest:["Bench Press","Incline Bench Press","Push-ups","Incline Dumbbell Press"],
+  Back:["Deadlift","Pull-ups","Lat Pulldown","Seated Cable Row"],
+  Shoulders:["Overhead Press","Arnold Press","Lateral Raise","Rear Delt Fly"],
+  Legs:["Squat","Leg Press","Romanian Deadlift","Leg Extension"],
+  Core:["Plank","Crunches","Leg Raises","Russian Twists"]
+};
+const BODY_PARTS = Object.keys(EXERCISES);
+
+async function callAI(messages, systemPrompt, json=false){
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-3-5-sonnet-20241022",max_tokens:1000,system:systemPrompt,messages})
+    });
+    const data = await res.json();
+    const text = (data.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("");
+    if(json){ const cleaned=text.replace(/```json|```/g,"").trim(); return JSON.parse(cleaned); }
+    return text;
+  } catch(e){ return json?null:"AI offline. Track metrics manually."; }
+}
+
+// ─── HIGH GRADE SYSTEM INTERFACE GRAPHICS UTILITIES ──────────────────────────
+function Btn({children,onClick,style,variant="primary",disabled,small}){
+  const base={border:"none",cursor:disabled?"not-allowed":"pointer",fontFamily:T.font,fontWeight:700,borderRadius:T.r,transition:"opacity .15s",opacity:disabled?0.5:1,padding:small?"8px 16px":"13px 22px",fontSize:small?"13px":"15px"};
+  const variants={primary:{background:T.grad,color:"#fff"},secondary:{background:T.card,color:T.text,border:`1px solid ${T.border}`},ghost:{background:"transparent",color:T.muted,border:`1px solid ${T.border}`},danger:{background:T.red,color:"#fff"},green:{background:T.gradGreen,color:"#fff"}};
+  return <button onClick={disabled?undefined:onClick} style={{...base,...variants[variant],...style}}>{children}</button>;
+}
+function Card({children,style,onClick}){ return <div onClick={onClick} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:T.rLg,padding:"16px",cursor:onClick?"pointer":"default",...style}}>{children}</div>; }
+function Input({label,value,onChange,type="text",placeholder,style}){
+  return(
+    <div style={{marginBottom:"14px",...style,width:"100%"}}>
+      {label&&<div style={{color:T.muted,fontSize:"12px",marginBottom:"6px",fontWeight:600,letterSpacing:".5px",textTransform:"uppercase"}}>{label}</div>}
+      <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={{width:"100%",background:T.bg3,border:`1px solid ${T.border}`,borderRadius:T.r,color:T.text,padding:"12px 14px",fontSize:"15px",fontFamily:T.font,outline:"none",boxSizing:"border-box"}}/>
+    </div>
+  );
+}
+function Select({label,value,onChange,options,style}){
+  return(
+    <div style={{marginBottom:"14px",...style,width:"100%"}}>
+      {label&&<div style={{color:T.muted,fontSize:"12px",marginBottom:"6px",fontWeight:600,letterSpacing:".5px",textTransform:"uppercase"}}>{label}</div>}
+      <select value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",background:T.bg3,border:`1px solid ${T.border}`,borderRadius:T.r,color:T.text,padding:"12px 14px",fontSize:"15px",fontFamily:T.font,outline:"none",boxSizing:"border-box"}}>
+        {options.map(o=><option key={o} value={o}>{o}</option>)}
+      </select>
+    </div>
+  );
+}
+function ProgressBar({value,max,color,height=8,style}){
+  const pct=max>0?clamp((value/max)*100,0,100):0;
+  return(<div style={{background:"rgba(255,255,255,0.08)",borderRadius:99,overflow:"hidden",height,...style}}><div style={{width:`${pct}%`,height:"100%",background:color||T.grad,borderRadius:99,transition:"width .4s"}}/></div>);
+}
+function Badge({label,color,style}){ return <span style={{background:color?`${color}22`:"rgba(255,255,255,0.06)",color:color||T.muted,border:`1px solid ${color?`${color}44`:T.border}`,borderRadius:99,padding:"4px 12px",fontSize:"11px",fontWeight:700,letterSpacing:".3px",...style}}>{label}</span>; }
+function Toast({msg,type="info"}){
+  if(!msg) return null;
+  const colors={info:T.cyan,success:T.green,error:T.red,warning:T.amber};
+  return <div style={{position:"fixed",top:60,left:"50%",transform:"translateX(-50%)",background:colors[type],color:"#fff",padding:"10px 20px",borderRadius:T.r,fontWeight:700,fontSize:"13px",zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,.5)",animation:"fadeIn .2s"}}>{msg}</div>;
+}
+function Chip({label,active,onClick}){ return <button onClick={onClick} style={{background:active?T.grad:T.card,color:active?"#fff":T.muted,border:`1px solid ${active?"transparent":T.border}`,borderRadius:99,padding:"7px 14px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}>{label}</button>; }
+function TypingDots(){ return <div style={{display:"flex",gap:4,alignItems:"center",padding:"4px 0"}}>{[0,1,2].map(i=><div key={i} style={{width:7,height:7,borderRadius:"50%",background:T.purple,animation:`bounce 1.2s ${i*0.2}s infinite`}}/>)}</div>; }
+function Spinner(){ return <div style={{width:24,height:24,borderRadius:"50%",border:`3px solid ${T.border}`,borderTopColor:T.purple,animation:"spin 0.8s linear infinite",margin:"20px auto"}}/>; }
+
+function LineChart({data,goal,color=T.purple}){
+  if(!data||data.length<2) return <div style={{color:T.dim,textAlign:"center",padding:"40px 0",fontSize:"13px"}}>Awaiting structural log sync</div>;
+  const W=320,H=140,pad=30; const vals=data.map(d=>d.value); const mn=Math.min(...vals,goal||Infinity)*0.9; const mx=Math.max(...vals,goal||0)*1.1||10;
+  const px=i=>pad+(i/(data.length-1))*(W-pad*2); const py=v=>H-pad-((v-mn)/(mx-mn))*(H-pad*2); const pts=data.map((d,i)=>`${px(i)},${py(d.value)}`).join(" ");
+  const fillPts=`${px(0)},${H-pad} ${pts} ${px(data.length-1)},${H-pad}`; const gid=`g${Math.random().toString(36).slice(2)}`;
+  return(
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto"}}>
+      <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.3"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
+      <polygon points={fillPts} fill={`url(#${gid})`}/>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>
+      {goal&&<line x1={pad} y1={py(goal)} x2={W-pad} y2={py(goal)} stroke={T.amber} strokeWidth="1.5" strokeDasharray="5,4"/>}
+      {data.map((d,i)=><text key={i} x={px(i)} y={H-6} textAnchor="middle" fill={T.dim} fontSize="9">{d.label}</text>)}
+    </svg>
+  );
+}
+function BarChart({data,color=T.purple}){
+  if(!data||data.length===0) return null; const mx=Math.max(...data.map(d=>d.value),1);
+  return(
+    <div style={{display:"flex",alignItems:"flex-end",gap:6,height:80,padding:"0 4px"}}>
+      {data.map((d,i)=>(
+        <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+          <div style={{width:"100%",background:color+"33",borderRadius:"4px 4px 0 0",position:"relative",height:60}}>
+            <div style={{position:"absolute",bottom:0,left:0,right:0,background:color,borderRadius:"4px 4px 0 0",height:`${(d.value/mx)*100}%`}}/>
+          </div>
+          <div style={{fontSize:9,color:T.dim,textAlign:"center"}}>{d.label}</div>
+        </div>
+      ))}
+    </div>
+  );
   }
-  
-  function calcProtein(w, goal) {
-    const mul = { "Muscle Gain": 2.2, "Bulking": 2.0, "Strength": 2.1, "Cutting": 2.4, "Fat Loss": 1.9, "Maintain": 1.6 }[goal] || 1.8;
-    return Math.round((w || 70) * mul);
-  }
-  
-  const BODY_EXERCISES = {
-    Chest: ["Incline DB Press", "Flat Bench Press", "Cable Chest Fly", "Dips"],
-    Back: ["Lat Pulldown", "Barbell Row", "Pull-Ups", "Seated Cable Row"],
-    Shoulders: ["Overhead Dumbbell Press", "Lateral Raise", "Rear Delt Fly"],
-    Legs: ["Barbell Squat", "Romanian Deadlift", "Leg Press", "Leg Extension"],
-    Arms: ["Barbell Bicep Curl", "Tricep Rope Pushdown", "Hammer Curl"]
-  };
-  
-  async function callAI(messages, systemPrompt, json = false) {
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-3-5-sonnet-20241022", max_tokens: 1000, system: systemPrompt, messages })
-      });
-      const data = await res.json();
-      const text = (data.content || []).filter(c => c.type === "text").map(c => c.text).join("");
-      if (json) { return JSON.parse(text.replace(/```json|```/g, "").trim()); }
-      return text;
-    } catch (e) { return json ? null : "AI offline. Track manually."; }
-  }
-  
-  function PremiumBtn({ children, onClick, variant = "primary", disabled, fullWidth, style }) {
-    const base = { border: "none", cursor: disabled ? "not-allowed" : "pointer", fontWeight: "700", borderRadius: "12px", transition: "all 0.2s ease", opacity: disabled ? 0.4 : 1, padding: "14px 24px", fontSize: "14px", width: fullWidth ? "100%" : "auto", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" };
-    const styles = { primary: { background: T.text, color: T.bg }, accent: { background: T.gradGold, color: "#000" }, secondary: { background: "rgba(255,255,255,0.04)", color: T.text, border: `1px solid ${T.border}` }, danger: { background: T.rose, color: "#fff" } };
-    return <button onClick={disabled ? undefined : onClick} style={{ ...base, ...styles[variant], ...style }}>{children}</button>;
-  }
-  
-  function PremiumCard({ children, style, onClick }) {
-    return <div onClick={onClick} className="fade-in premium-blur" style={{ background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: "16px", padding: "20px", boxShadow: "0 12px 40px 0 rgba(0, 0, 0, 0.5)", cursor: onClick ? "pointer" : "default", ...style }}>{children}</div>;
-  }
-  
-  function PremiumInput({ label, value, onChange, type = "text", placeholder }) {
-    return (
-      <div style={{ marginBottom: "16px" }}>
-        {label && <label style={{ color: T.muted, fontSize: "11px", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>{label}</label>}
-        <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ width: "100%", background: T.bgInput, border: `1px solid ${T.border}`, borderRadius: "10px", color: T.text, padding: "12px 16px", fontSize: "14px", outline: "none" }}/>
-      </div>
-    );
-  }
-  
-  function PremiumSelect({ label, value, onChange, options }) {
-    return (
-      <div style={{ marginBottom: "16px" }}>
-        {label && <label style={{ color: T.muted, fontSize: "11px", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>{label}</label>}
-        <select value={value} onChange={e => onChange(e.target.value)} style={{ width: "100%", background: T.bgInput, border: `1px solid ${T.border}`, borderRadius: "10px", color: T.text, padding: "12px 16px", fontSize: "14px", outline: "none" }}>
-          {options.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-      </div>
-    );
-  }
-  
-  function PremiumProgress({ value, max, color = T.accent, height = 6 }) {
-    const pct = max > 0 ? clamp((value / max) * 100, 0, 100) : 0;
-    return <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: "99px", overflow: "hidden", height, width: "100%" }}><div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: "99px", transition: "width 0.4s ease" }} /></div>;
-    }
-      function AuthScreen({ onAuth }) {
-    const [mode, setMode] = useState("login");
-    const [email, setEmail] = useState("");
-    const [pass, setPass] = useState("");
-    const [name, setName] = useState("");
-    const [refInput, setRefInput] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [err, setErr] = useState("");
-    useEffect(() => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const refCode = urlParams.get("ref");
-      if (refCode) { setRefInput(refCode); setMode("signup"); }
-    }, []);
-    async function handleAuthAction() {
-      setLoading(true); setErr("");
-      try {
-        if (mode === "login") {
-          const cred = await auth.signInWithEmailAndPassword(email, pass);
-          onAuth(cred.user);
-        } else {
-          const referralCodeGenerated = (name.slice(0,4).toUpperCase() + Math.floor(1000 + Math.random() * 9000));
-          let baseTrialExpiration = Date.now() + 7 * 86400000;
-          if (refInput.trim()) {
-            const codesSnap = await db.collection("users").where("myReferralCode", "==", refInput.trim().toUpperCase()).get();
-            if (!codesSnap.empty) {
-              const referrerDoc = codesSnap.docs[0];
-              const referrerData = referrerDoc.data();
-              const currentRefExp = referrerData.sub?.expiresAt || referrerData.sub?.trialEnd || new Date().toISOString();
-              const upgradedExpDate = new Date(new Date(currentRefExp).getTime() + (7 * 86400000)).toISOString();
-              await db.collection("users").doc(referrerDoc.id).set({
-                sub: { ...referrerData.sub, [referrerData.sub?.status === "active" ? "expiresAt" : "trialEnd"]: upgradedExpDate },
-                referralCount: (referrerData.referralCount || 0) + 1
-              }, { merge: true });
-              baseTrialExpiration += 3 * 86400000;
-            }
+    // ─── AUTH ENGINE INITIALIZATION LAYER WITH PEER REFERRALS ─────────────────────
+function AuthScreen({onAuth}){
+  const [mode,setMode]=useState("login");
+  const [email,setEmail]=useState("");
+  const [pass,setPass]=useState("");
+  const [name,setName]=useState("");
+  const [refInput,setRefInput]=useState("");
+  const [loading,setLoading]=useState(false);
+  const [err,setErr]=useState("");
+
+  useEffect(()=>{
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get("ref");
+    if(refCode){ setRefInput(refCode); setMode("signup"); }
+  },[]);
+
+  async function handleSubmit(){
+    setLoading(true); setErr("");
+    try{
+      if(mode==="login"){
+        const cred = await auth.signInWithEmailAndPassword(email,pass);
+        onAuth(cred.user);
+      } else {
+        const generatedRefKey = (name.slice(0,4).toUpperCase() + Math.floor(1000 + Math.random() * 9000));
+        let trialExpirationTimeline = Date.now() + 7 * 86400000;
+
+        if (refInput.trim()) {
+          const snap = await db.collection("users").where("myReferralCode", "==", refInput.trim().toUpperCase()).get();
+          if (!snap.empty) {
+            const referrerDoc = snap.docs[0];
+            const referrerData = referrerDoc.data();
+            const currentExp = referrerData.sub?.expiresAt || referrerData.sub?.trialEnd || new Date().toISOString();
+            const extendedTimeline = new Date(new Date(currentExp).getTime() + (7 * 86400000)).toISOString();
+            
+            await db.collection("users").doc(referrerDoc.id).set({
+              sub: { ...referrerData.sub, [referrerData.sub?.status === "active" ? "expiresAt" : "trialEnd"]: extendedTimeline },
+              referralCount: (referrerData.referralCount || 0) + 1
+            }, { merge: true });
+            trialExpirationTimeline += 3 * 86400000; // Credit extra trial extension to joiner node
           }
-          const cred = await auth.createUserWithEmailAndPassword(email, pass);
-          await db.collection("users").doc(cred.user.uid).set({
-            email, name, phone: "", createdAt: new Date().toISOString(), isAdmin: email === ADMIN_EMAIL, myReferralCode: referralCodeGenerated, claimUsed: refInput.trim() ? true : false, referralCount: 0,
-            sub: { status: "trial", trialEnd: new Date(baseTrialExpiration).toISOString() }
-          });
-          onAuth(cred.user);
         }
-      } catch (e) { setErr(e.message); }
-      setLoading(false);
-    }
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", background: T.bg }}>
-        <div style={{ fontSize: "44px", marginBottom: "12px" }}>⚜️</div>
-        <h1 style={{ fontSize: "32px", fontWeight: "900", marginBottom: "32px" }}>FitPro <span style={{ color: T.accent }}>AI</span></h1>
-        <PremiumCard style={{ width: "100%", maxWidth: "400px" }}>
-          <div style={{ display: "flex", gap: "16px", marginBottom: "24px" }}>
-            <span onClick={() => setMode("login")} style={{ fontSize: "15px", fontWeight: "700", color: mode === "login" ? T.text : T.muted, cursor: "pointer" }}>Sign In</span>
-            <span onClick={() => setMode("signup")} style={{ fontSize: "15px", fontWeight: "700", color: mode === "signup" ? T.text : T.muted, cursor: "pointer" }}>Register</span>
+
+        const cred = await auth.createUserWithEmailAndPassword(email,pass);
+        await db.collection("users").doc(cred.user.uid).set({
+          email, name, phone: "", createdAt: new Date().toISOString(),
+          isAdmin: email===ADMIN_EMAIL, myReferralCode: generatedRefKey,
+          claimUsed: refInput.trim() ? true : false, referralCount: 0,
+          sub: { status:"trial", trialEnd: new Date(trialExpirationTimeline).toISOString() }
+        });
+        onAuth(cred.user);
+      }
+    } catch(e){ setErr(e.message); }
+    setLoading(false);
+  }
+
+  return(
+    <div style={{minHeight:"100vh",background:T.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,color:T.text}}>
+      <div style={{fontSize:52,marginBottom:12}}>⚜️</div>
+      <div style={{fontSize:28,fontWeight:900,background:T.grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:4}}>FitPro AI</div>
+      <div style={{color:T.muted,fontSize:"13px",marginBottom:32}}>Elite Tier Performance SaaS Hub</div>
+      <Card style={{width:"100%",maxWidth:380}}>
+        <div style={{display:"flex",gap:8,marginBottom:20}}>
+          {["login","signup"].map(m=><Chip key={m} label={m==="login"?"Login":"Sign Up"} active={mode===m} onClick={()=>setMode(m)}/>)}
+        </div>
+        {mode==="signup"&&<Input label="Full Name Profile" value={name} onChange={setName} placeholder="Your name"/>}
+        <Input label="Email Address" value={email} onChange={setEmail} type="email" placeholder="email@example.com"/>
+        <Input label="Security Password" value={pass} onChange={setPass} type="password" placeholder="Min 6 characters"/>
+        {mode==="signup"&&<Input label="Referral Invitation Token" value={refInput} onChange={setRefInput} placeholder="Optional Key Code" />}
+        {err&&<div style={{color:T.red,fontSize:"12px",marginBottom:12}}>{err}</div>}
+        <Btn onClick={handleSubmit} disabled={loading} style={{width:"100%"}}>{loading?<Spinner/>:mode==="login"?"🔓 Unlock Hub Workspace":"🚀 Initialize Account"}</Btn>
+      </Card>
+    </div>
+  );
+}
+
+function Onboarding({user,onDone}){
+  const [step,setStep]=useState(0);
+  const [form,setForm]=useState({name:"",age:"25",gender:"Male",height:"170",weight:"70",level:"Beginner",goal:"Fat Loss",diet:"Veg",activity:"Moderate",sleep:"7",water:"3"});
+  const set=(k,v)=>setForm(p=>({...p,[k]:v}));
+
+  async function handleNext(){
+    if(step<2){setStep(s=>s+1);return;}
+    const w=+form.weight,h=+form.height,age=+form.age;
+    const calGoal=calcCalGoal(w,h,age,form.gender,form.activity,form.goal);
+    const protGoal=calcProtein(w,form.goal);
+    const profile={...form,weight:w,height:h,age,calGoal,protGoal,waterGoal:+form.water,sleepGoal:+form.sleep,setupDone:true};
+    await db.collection("users").doc(user.uid).set(profile,{merge:true});
+    onDone(profile);
+  }
+
+  return(
+    <div style={{minHeight:"100vh",background:T.bg,color:T.text,display:"flex",flexDirection:"column"}}>
+      <div style={{padding:"60px 24px 24px",flex:1,maxWidth:440,margin:"0 auto",width:"100%",boxSizing:"border-box"}} className="fade-in">
+        <div style={{display:"flex",gap:6,marginBottom:30}}>
+          {[0,1,2].map(i=><div key={i} style={{flex:1,height:4,borderRadius:99,background:i<=step?T.grad:T.bg3}}/>)}
+        </div>
+        {step===0&&(
+          <div>
+            <h2 style={{marginBottom:12}}>Biometric Shards</h2>
+            <Input label="Name Identity" value={form.name} onChange={v=>set("name",v)}/>
+            <Input label="Contact Field (WhatsApp Phone)" value={form.phone||""} onChange={v=>set("phone",v)} placeholder="91XXXXXXXXXX" />
+            <Input label="Biological Age" value={form.age} onChange={v=>set("age",v)} type="number"/>
+            <Select label="Biological Gender" value={form.gender} onChange={v=>set("gender",v)} options={["Male","Female","Other"]}/>
           </div>
-          {mode === "signup" && <PremiumInput label="Identity Name" value={name} onChange={setName} placeholder="Your Elite Name" />}
-          <PremiumInput label="Email Architecture" value={email} onChange={setEmail} type="email" placeholder="operator@domain.com" />
-          <PremiumInput label="Password" value={pass} onChange={setPass} type="password" placeholder="••••••••" />
-          {mode === "signup" && <PremiumInput label="Referral Code" value={refInput} onChange={setRefInput} />}
-          {err && <div style={{ color: T.rose, fontSize: "12px", marginBottom: "16px" }}>{err}</div>}
-          <PremiumBtn variant="accent" onClick={handleAuthAction} disabled={loading} fullWidth>{mode === "login" ? "Access Dashboard" : "Complete Registration"}</PremiumBtn>
-        </PremiumCard>
-      </div>
-    );
-  }
-  
-  function Onboarding({ user, onDone }) {
-    const [step, setStep] = useState(0);
-    const [form, setForm] = useState({ name: "", age: "24", phone: "", gender: "Male", height: "175", weight: "72", level: "Intermediate", goal: "Muscle Gain", diet: "Veg", activity: "Moderate", sleep: "7", water: "3.5" });
-    async function completeSetup() {
-      const w = +form.weight, h = +form.height, age = +form.age;
-      const calGoal = calcCalGoal(w, h, age, form.gender, form.activity, form.goal);
-      const protGoal = calcProtein(w, form.goal);
-      const profile = { ...form, weight: w, height: h, age, calGoal, protGoal, waterGoal: +form.water, sleepGoal: +form.sleep, setupDone: true };
-      await db.collection("users").doc(user.uid).set(profile, { merge: true });
-      onDone(profile);
-    }
-    return (
-      <div style={{ minHeight: "100vh", padding: "40px 24px", display: "flex", flexDirection: "column", background: T.bg }}>
-        <div style={{ maxWidth: "420px", width: "100%", margin: "auto" }}>
-          {step === 0 ? (
-            <div className="fade-in">
-              <h2>Biometric Matrix</h2>
-              <PremiumInput label="Full Name" value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} />
-              <PremiumInput label="WhatsApp Phone" value={form.phone} onChange={v => setForm(p => ({ ...p, phone: v }))} placeholder="91XXXXXXXXXX" />
-              <PremiumInput label="Age" value={form.age} onChange={v => setForm(p => ({ ...p, age: v }))} type="number" />
-              <PremiumSelect label="Gender" value={form.gender} onChange={v => setForm(p => ({ ...p, gender: v }))} options={["Male", "Female", "Other"]} />
-              <PremiumBtn variant="accent" onClick={() => setStep(1)} fullWidth>Next Layer</PremiumBtn>
-            </div>
-          ) : (
-            <div className="fade-in">
-              <h2>Physiological Targets</h2>
-              <PremiumInput label="Height (cm)" value={form.height} onChange={v => setForm(p => ({ ...p, height: v }))} type="number" />
-              <PremiumInput label="Weight (kg)" value={form.weight} onChange={v => setForm(p => ({ ...p, weight: v }))} type="number" />
-              <PremiumSelect label="Objective" value={form.goal} onChange={v => setForm(p => ({ ...p, goal: v }))} options={["Fat Loss", "Muscle Gain", "Strength", "Cutting", "Bulking", "Maintain"]} />
-              <PremiumSelect label="Activity" value={form.activity} onChange={v => setForm(p => ({ ...p, activity: v }))} options={["Sedentary", "Light", "Moderate", "Active", "VeryActive"]} />
-              <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
-                <PremiumBtn variant="secondary" onClick={() => setStep(0)}>Return</PremiumBtn>
-                <PremiumBtn variant="accent" onClick={completeSetup} fullWidth>Initialize Engine</PremiumBtn>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-  
-  function DashboardTab({ profile, userData }) {
-    const nutrition = userData?.nutrition || {};
-    const todayMeals = nutrition[today()] || {};
-    const totalCal = Object.values(todayMeals).reduce((s, m) => s + (m.macros?.calories || 0), 0);
-    const totalProt = Object.values(todayMeals).reduce((s, m) => s + (m.macros?.protein || 0), 0);
-    const totalCarbs = Object.values(todayMeals).reduce((s, m) => s + (m.macros?.carbs || 0), 0);
-    const totalFat = Object.values(todayMeals).reduce((s, m) => s + (m.macros?.fat || 0), 0);
-    const todayWater = userData?.water?.[today()] || 0;
-    const todaySteps = userData?.steps?.[today()] || 0;
-    const bmi = calcBMI(profile.weight, profile.height);
-    const [bmiLbl, bmiColor] = bmiLabel(bmi);
-    return (
-      <div style={{ padding: "0 20px 120px" }} className="fade-in">
-        <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
-          <PremiumCard style={{ flex: 1, textAlign: "center" }}>
-            <span style={{ color: T.muted, fontSize: "10px" }}>Body Mass Scale</span>
-            <h3 style={{ fontSize: "22px", color: bmiColor }}>{bmi}</h3>
-            <span style={{ fontSize: "11px", color: bmiColor }}>{bmiLbl}</span>
-          </PremiumCard>
-          <PremiumCard style={{ flex: 1, textAlign: "center" }}>
-            <span style={{ color: T.muted, fontSize: "10px" }}>Operational Streak</span>
-            <h3 style={{ fontSize: "22px", color: T.accent }}>🔥 {userData?.streak || 0} Days</h3>
-          </PremiumCard>
-        </div>
-        <PremiumCard style={{ marginBottom: "16px" }}>
-          <span style={{ color: T.muted, fontSize: "10px" }}>Calorie Energy Pipeline</span>
-          <h2 style={{ fontSize: "28px" }}>{totalCal} <span style={{ fontSize: "14px", color: T.muted }}>/ {profile.calGoal} Kcal</span></h2>
-          <PremiumProgress value={totalCal} max={profile.calGoal} color={totalCal > profile.calGoal ? T.rose : T.accent} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginTop: "20px" }}>
-            <div><span style={{ fontSize: "9px", color: T.muted }}>PROTEIN</span><p style={{ fontSize: "12px" }}>{totalProt}g/{profile.protGoal}g</p></div>
-            <div><span style={{ fontSize: "9px", color: T.muted }}>CARBS</span><p style={{ fontSize: "12px" }}>{totalCarbs}g/250g</p></div>
-            <div><span style={{ fontSize: "9px", color: T.muted }}>FAT</span><p style={{ fontSize: "12px" }}>{totalFat}g/70g</p></div>
-          </div>
-        </PremiumCard>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-          <PremiumCard><span>Fluid Log</span><h4>💧 {todayWater} L</h4></PremiumCard>
-          <PremiumCard><span>Steps Log</span><h4>👟 {todaySteps.toLocaleString()}</h4></PremiumCard>
-        </div>
-        <ReminderSubsystem />
-      </div>
-    );
-  }
-  
-  function ReminderSubsystem() {
-    const [config, setConfig] = useState({ workoutTime: "07:00", mealTime: "13:30", enabled: false });
-    useEffect(() => {
-      if (!config.enabled) return;
-      const interval = setInterval(() => {
-        const timeNow = new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" });
-        if (timeNow === config.workoutTime && Notification.permission === "granted") { new Notification("FitPro Alert", { body: "Time for training output verification!" }); }
-      }, 60000);
-      return () => clearInterval(interval);
-    }, [config]);
-    return (
-      <PremiumCard style={{ marginTop: "16px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontSize: "10px", color: T.muted }}>Smart Reminders</span>
-          <input type="checkbox" checked={config.enabled} onChange={e => { if(e.target.checked) { Notification.requestPermission(); setConfig(p=>({...p, enabled:true})); } else setConfig(p=>({...p, enabled:false})); }} />
-        </div>
-      </PremiumCard>
-    );
-  }
-  
-  function NutritionTab({ profile, userData, saveData }) {
-    const [section, setSection] = useState("Lunch");
-    const [query, setQuery] = useState("");
-    const [processing, setProcessing] = useState(false);
-    const [stagedResult, setStagedResult] = useState(null);
-    const mealSections = ["Breakfast", "Lunch", "Dinner", "Snacks", "Pre-Workout", "Post-Workout", "Late Night"];
-    const currentDayMeals = userData?.nutrition?.[today()] || {};
-    async function parseDietAI() {
-      if (!query.trim()) return;
-      setProcessing(true);
-      const result = await callAI([{ role: "user", content: `Meal Section: ${section}. Query: ${query}. Diet: ${profile.diet}` }],
-        `You are FitPro Engine. Return ONLY JSON format: {"foods":["Item"],"macros":{"calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0}, "summary": "text"}. No markdown formatting.`, true);
-      if (result) setStagedResult(result);
-      setProcessing(false);
-    }
-    async function logMealToDatabase() {
-      if (!stagedResult) return;
-      const key = `${section}_${Date.now()}`;
-      const updated = { ...userData, nutrition: { ...(userData?.nutrition || {}), [today()]: { ...currentDayMeals, [key]: { type: section, foods: stagedResult.foods, macros: stagedResult.macros, timestamp: new Date().toISOString() } } } };
-      await saveData(updated);
-      setQuery(""); setStagedResult(null);
-    }
-    return (
-      <div style={{ padding: "0 20px 120px" }} className="fade-in">
-        <PremiumCard style={{ marginBottom: "16px" }}>
-          <div className="meal-chip-scroll">
-            {mealSections.map(s => <button key={s} onClick={() => setSection(s)} style={{ background: section === s ? T.accent : "rgba(255,255,255,0.03)", color: section === s ? "#000" : "#fff", padding: "8px 16px", border: "none", borderRadius: "20px", fontWeight: "700", fontSize: "12px", cursor: "pointer" }}>{s}</button>)}
-          </div>
-        </PremiumCard>
-        <PremiumCard style={{ marginBottom: "16px" }}>
-          <textarea value={query} onChange={e => setQuery(e.target.value)} placeholder="e.g. 2 paratha, butter, chawal..." style={{ width: "100%", height: "90px", background: T.bgInput, border: `1px solid ${T.border}`, borderRadius: "12px", color: T.text, padding: "12px", outline: "none" }} />
-          <PremiumBtn variant="accent" onClick={parseDietAI} disabled={processing || !query.trim()} fullWidth style={{ marginTop: "12px" }}>{processing ? "Analyzing..." : "Execute AI Calibration"}</PremiumBtn>
-        </PremiumCard>
-        {stagedResult && (
-          <PremiumCard style={{ marginBottom: "16px" }}>
-            <p>{stagedResult.summary}</p>
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-              <PremiumBtn variant="secondary" onClick={() => setStagedResult(null)}>Discard</PremiumBtn>
-              <PremiumBtn variant="accent" onClick={logMealToDatabase}>Commit Log Entry</PremiumBtn>
-            </div>
-          </PremiumCard>
         )}
-      </div>
-    );
-  }
-  
-  function WorkoutTab({ profile, userData, saveData }) {
-    const [selectedDate, setSelectedDate] = useState(today());
-    const [view, setView] = useState("calendar");
-    const [activeSession, setActiveSession] = useState(null);
-    const [bodyPart, setBodyPart] = useState("Chest");
-    const workouts = userData?.workouts || {};
-    const currentObjectDate = new Date(selectedDate);
-    const daysInMonthCount = new Date(currentObjectDate.getFullYear(), currentObjectDate.getMonth() + 1, 0).getDate();
-    function triggerSessionInitialize() {
-      setActiveSession(workouts[selectedDate] || { date: selectedDate, exercises: [] });
-      setView("session");
-    }
-    function appendExerciseTemplate(name) {
-      if (activeSession.exercises.some(e => e.name === name)) return;
-      setActiveSession(p => ({ ...p, exercises: [...p.exercises, { id: uid(), name, sets: [{ reps: 10, weight: 40, rpe: 8, checked: false }] }] }));
-    }
-    async function commitSessionToCloud() {
-      const updated = { ...userData, workouts: { ...(userData?.workouts || {}), [selectedDate]: activeSession } };
-      await saveData(updated);
-      setView("calendar");
-    }
-    return (
-      <div style={{ padding: "0 20px 120px" }} className="fade-in">
-        {view === "calendar" ? (
+        {step===1&&(
           <div>
-            <PremiumCard style={{ marginBottom: "16px", textAlign: "center" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "6px" }}>
-                {Array(daysInMonthCount).fill(null).map((_, i) => {
-                  const day = i + 1;
-                  const dateStr = `2026-06-${String(day).padStart(2, '0')}`;
-                  return <div key={day} onClick={() => setSelectedDate(dateStr)} style={{ padding: "8px 0", cursor: "pointer", background: selectedDate === dateStr ? "rgba(226,184,103,0.2)" : "transparent", borderRadius: "8px" }}><span style={{ color: workouts[dateStr] ? T.mint : T.text }}>{day}</span></div>;
-                })}
-              </div>
-            </PremiumCard>
-            <PremiumBtn variant="accent" onClick={triggerSessionInitialize} fullWidth>Start Selected Session</PremiumBtn>
+            <h2 style={{marginBottom:12}}>Physiological Configuration</h2>
+            <Input label="Height Scale (cm)" value={form.height} onChange={v=>set("height",v)} type="number"/>
+            <Input label="Absolute Weight Mass (kg)" value={form.weight} onChange={v=>set("weight",v)} type="number"/>
+            <Select label="Transformation Intent" value={form.goal} onChange={v=>set("goal",v)} options={["Fat Loss","Muscle Gain","Strength","Cutting","Bulking","Maintain"]}/>
           </div>
-        ) : (
+        )}
+        {step===2&&(
           <div>
-            <div style={{ display: "flex", gap: "10px", marginBottom: "16px" }}><PremiumBtn variant="secondary" onClick={() => setView("calendar")}>Back</PremiumBtn><PremiumBtn variant="accent" onClick={commitSessionToCloud}>Finish Workout</PremiumBtn></div>
-            {activeSession.exercises.map(ex => (
-              <PremiumCard key={ex.id} style={{ marginBottom: "12px" }}>
-                <h4>{ex.name}</h4>
-                <PremiumBtn variant="secondary" onClick={() => appendExerciseTemplate(ex.name)}>Add Set</PremiumBtn>
-              </PremiumCard>
-            ))}
-            <PremiumCard><div style={{ display: "flex", gap: "6px" }}>{BODY_EXERCISES[bodyPart]?.map(n => <button key={n} onClick={() => appendExerciseTemplate(n)} style={{ background: T.bgInput, color: "#fff", padding: "6px", border: "none", borderRadius: "4px" }}>{n}</button>)}</div></PremiumCard>
+            <h2 style={{marginBottom:12}}>Routine Baselines</h2>
+            <Select label="Activity Strain Level" value={form.activity} onChange={v=>set("activity",v)} options={["Sedentary","Light","Moderate","Active","VeryActive"]}/>
+            <Select label="Diet Selection Matrix" value={form.diet} onChange={v=>set("diet",v)} options={["Veg","Non-Veg","Vegan"]}/>
           </div>
         )}
       </div>
-    );
-  }
-    function AICoachTab({ profile }) {
-    const [chatLog, setChatLog] = useState([{ role: "assistant", content: `Greetings ${profile.name}. Online.` }]);
-    const [text, setText] = useState("");
-    async function send() {
-      const uMsg = { role: "user", content: text };
-      setChatLog(p => [...p, uMsg]); setText("");
-      const reply = await callAI(chatLog.concat([uMsg]), "You are FitPro Engine. Match Hinglish/English patterns.");
-      setChatLog(p => [...p, { role: "assistant", content: reply }]);
-    }
-    return (
-      <div style={{ padding: "0 20px 120px" }}>
-        <div style={{ height: "300px", overflowY: "auto" }}>{chatLog.map((m, i) => <div key={i} style={{ color: m.role === "user" ? T.accent : "#fff" }}>{m.content}</div>)}</div>
-        <input value={text} onChange={e => setText(e.target.value)} style={{ width: "100%", background: T.bgInput, color: "#fff", padding: "10px" }} />
-        <button onClick={send}>Send</button>
+      <div style={{padding:"16px 24px 36px",display:"flex",gap:12,maxWidth:440,margin:"0 auto",width:"100%"}}>
+        {step>0&&<Btn variant="secondary" onClick={()=>setStep(s=>s-1)} style={{flex:1}}>← Return</Btn>}
+        <Btn onClick={handleNext} disabled={step===0&&!form.name.trim()} style={{flex:2}}>{step===2?"🏁 Mount Platform Hub":"Continue →"}</Btn>
       </div>
-    );
-  }
-  
-  function SettingsTab({ userData, user }) {
-    const link = `${window.location.origin}${window.location.pathname}?ref=${userData?.myReferralCode || ""}`;
-    return (
-      <div style={{ padding: "0 20px 120px" }}>
-        <PremiumCard><h4>{user.email}</h4></PremiumCard>
-        <PremiumCard><h5>Referral Link:</h5><p style={{ wordBreak: "break-all" }}>{link}</p></PremiumCard>
+    </div>
+  );
+}
+
+function DashboardTab({profile,userData,sub}){
+  const todayNutrition=userData?.nutrition?.[today()]||{};
+  const totalCal=Object.values(todayNutrition).reduce((s,m)=>s+(m.macros?.calories||0),0);
+  const totalProt=Object.values(todayNutrition).reduce((s,m)=>s+(m.macros?.protein||0),0);
+  const todayWater=userData?.water?.[today()]||0;
+  const todaySteps=userData?.steps?.[today()]||0;
+  const bmi=calcBMI(profile.weight,profile.height);
+  const [bmiLbl,bmiColor]=bmiLabel(bmi);
+
+  return(
+    <div style={{padding:"0 16px 100px"}} className="fade-in">
+      <div style={{display:"flex",gap:10,marginBottom:14}}>
+        <Card style={{flex:1,textAlign:"center"}}>
+          <div style={{fontSize:22,fontWeight:900,color:bmiColor}}>{bmi}</div>
+          <div style={{fontSize:"11px",color:T.muted}}>BMI Scale</div>
+          <Badge label={bmiLbl} color={bmiColor} style={{marginTop:4}}/>
+        </Card>
+        <Card style={{flex:1,textAlign:"center"}}>
+          <div style={{fontSize:22,fontWeight:900,color:T.pink}}>🔥 {userData?.streak||0}</div>
+          <div style={{fontSize:"11px",color:T.muted}}>Streak Cycles</div>
+        </Card>
       </div>
-    );
-  }
-  
-  function AdminPanel({ onClose }) {
-    const [users, setUsers] = useState([]);
-    useEffect(() => { db.collection("users").onSnapshot(s => setUsers(s.docs.map(d => d.data()))); }, []);
-    function downloadPDF(u) {
-      const el = document.createElement("div");
-      el.innerHTML = `<h1>FitPro Report - ${u.name}</h1><p>Goal: ${u.goal}</p><p>Streak: ${u.streak || 0}</p>`;
-      html2pdf().from(el).save(`Report_${u.name}.pdf`);
-    }
-    return (
-      <div style={{ position: "fixed", inset: 0, background: T.bg, zIndex: 10000, padding: "20px" }}>
-        <button onClick={onClose}>Close</button>
-        {users.map((u, i) => <div key={i} style={{ margin: "10px 0" }}><span>{u.name} ({u.email})</span><button onClick={() => downloadPDF(u)}>Generate Weekly Report</button></div>)}
+      <Card style={{marginBottom:14}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+          <span style={{fontWeight:700}}>Calorie Fuel Energy Budget</span>
+          <span style={{color:T.muted,fontSize:"13px"}}>{totalCal} / {profile.calGoal} kcal</span>
+        </div>
+        <ProgressBar value={totalCal} max={profile.calGoal} color={totalCal>profile.calGoal?T.red:T.grad} height={10}/>
+        <div style={{display:"flex",gap:12,marginTop:12}}>
+          <div style={{flex:1}}><div style={{fontSize:"11px",color:T.muted}}>Protein: <b>{totalProt}g</b></div><ProgressBar value={totalProt} max={profile.protGoal} color={T.purple}/></div>
+          <div style={{flex:1}}><div style={{fontSize:"11px",color:T.muted}}>Water: <b>{todayWater}L</b></div><ProgressBar value={todayWater} max={profile.waterGoal||3} color={T.cyan}/></div>
+        </div>
+      </Card>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+        <Card><span>Hydration Level</span><h4>💧 {todayWater} Liters</h4></Card>
+        <Card><span>Pedestrian Steps</span><h4>👟 {todaySteps.toLocaleString()}</h4><ProgressBar value={todaySteps} max={10000} color={T.green} style={{marginTop:4}}/></Card>
       </div>
-    );
-  }
+      <ReminderSubsystem />
+    </div>
+  );
+}
+
+function ReminderSubsystem() {
+  const [config, setConfig] = useState({ workoutTime: "07:00", enabled: false });
+  useEffect(() => {
+    if (!config.enabled) return;
+    const taskCycleInterval = setInterval(() => {
+      const liveStr = new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" });
+      if (liveStr === config.workoutTime && Notification.permission === "granted") {
+        new Notification("FitPro SaaS Alert", { body: "Time to complete operational execution tracking!" });
+      }
+    }, 60000);
+    return () => clearInterval(taskCycleInterval);
+  }, [config]);
+
+  return (
+    <Card style={{ marginTop: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span>Smart System Reminders</span>
+        <input type="checkbox" checked={config.enabled} onChange={e => {
+          if(e.target.checked) { Notification.requestPermission(); setConfig(p=>({...p, enabled:true})); }
+          else setConfig(p=>({...p, enabled:false}));
+        }} style={{ width: 16, height: 16, accentColor: T.purple }} />
+      </div>
+    </Card>
+  );
+}
+
+function NutritionTab({profile,userData,saveData}){
+  const [section,setSection]=useState("Lunch");
+  const [input,setInput]=useState("");
+  const [loading,setLoading]=useState(false);
+  const [analysisResult,setAnalysisResult]=useState(null);
   
-  function FitPro() {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [userData, setUserData] = useState(null);
-    const [activeTab, setActiveTab] = useState("home");
-    const [admin, setAdmin] = useState(false);
-    const [taps, setTaps] = useState(0);
-    useEffect(() => { auth.onAuthStateChanged(u => { setUser(u); setLoading(false); }); }, []);
-    useEffect(() => { if (user) { db.collection("users").doc(user.uid).onSnapshot(s => setUserData(s.data())); } }, [user]);
-    if (loading) return <div style={{ color: "#fff", textAlign: "center", marginTop: "20%" }}>Initializing Ecosystem...</div>;
-    if (!user) return <AuthScreen onAuth={u => setUser(u)} />;
-    if (!userData?.setupDone) return <Onboarding user={user} onDone={p => setUserData(p)} />;
-    return (
-      <div style={{ background: T.bg, minHeight: "100vh", maxWidth: "440px", margin: "0 auto", position: "relative", borderLeft: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}` }}>
-        {admin && <AdminPanel onClose={() => setAdmin(false)} />}
-        <header style={{ padding: "40px 20px 16px", display: "flex", justifyContent: "space-between" }} className="premium-blur">
-          <div onClick={() => { setTaps(t=> { if(t+1>=5 && user.email===ADMIN_EMAIL) { setAdmin(true); return 0; } return t+1; }); }}>
-            <h2>FitPro <span style={{ color: T.accent }}>AI</span></h2>
+  const sectionsMenu = ["Breakfast", "Lunch", "Dinner", "Snacks", "Pre-Workout", "Post-Workout", "Late Night"];
+  const currentDayMeals=userData?.nutrition?.[today()]||{};
+
+  async function analyzeAI(){
+    if(!input.trim()) return;
+    setLoading(true); setAnalysisResult(null);
+    const output=await callAI([{role:"user",content:`Meal: ${input}. Section: ${section}. Diet: ${profile.diet}`}],
+      `Return absolute computational nutrition values in exact single line string layout scheme block ONLY: {"foods":["item"],"macros":{"calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0},"summary":"Brief description metrics text string"}. No descriptions conversations lines outside schema tags. No markdown code formatting wrappers.`,true);
+    if(output) setAnalysisResult(output);
+    setLoading(false);
+  }
+
+  async function saveMeal(){
+    if(!analysisResult) return;
+    const updated={...userData,nutrition:{...(userData?.nutrition||{}),[today()]:{...currentDayMeals,[`${section}_${Date.now()}`]:{type:section,foods:analysisResult.foods,macros:analysisResult.macros,summary:analysisResult.summary,timestamp:new Date().toISOString()}}}};
+    await saveData(updated); setInput(""); setAnalysisResult(null);
+  }
+
+  return(
+    <div style={{padding:"0 16px 100px"}} className="fade-in">
+      <Card style={{marginBottom:14}}>
+        <div className="meal-chip-scroll">
+          {sectionsMenu.map(s=><button key={s} onClick={()=>{setSection(s);setAnalysisResult(null);}} style={{background:section===s?T.grad:T.card,color:section===s?"#fff":T.muted,border:`1px solid ${section===s?"transparent":T.border}`,borderRadius:99,padding:"8px 16px",fontSize:"13px",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{s}</button>)}
+        </div>
+      </Card>
+      <Card style={{marginBottom:14}}>
+        <textarea value={input} onChange={e=>setInput(e.target.value)} placeholder="e.g. 2 paratha, paneer sabji, chawal details input logs..." style={{width:"100%",background:T.bg3,border:`1px solid ${T.border}`,borderRadius:T.r,color:T.text,padding:"12px",fontSize:"14px",outline:"none",minHeight:80,resize:"none"}}/>
+        <Btn onClick={analyzeAI} disabled={loading||!input.trim()} style={{width:"100%",marginTop:10}}>{loading?<TypingDots/>:"🤖 Parse via Intelligence Engine"}</Btn>
+      </Card>
+      {analysisResult&&(
+        <Card style={{marginBottom:14,border:`1px solid ${T.green}44`}}>
+          <p style={{fontSize:"13px",color:T.muted,lineHeight:1.5,marginBottom:10}}>{analysisResult.summary}</p>
+          <div style={{display:"flex",gap:10}}><Btn variant="ghost" onClick={()=>setAnalysisResult(null)} style={{flex:1}}>Discard</Btn><Btn onClick={saveMeal} style={{flex:2}} variant="green">Commit Log Sheet</Btn></div>
+        </Card>
+      )}
+    </div>
+  );
+  }
+    function WorkoutTab({profile,userData,saveData}){
+  const [selectedDate,setSelectedDate] = useState(today());
+  const [view,setView] = useState("calendar");
+  const [session,setSession] = useState(null);
+  const [bodyPart,setBodyPart] = useState("Chest");
+
+  const workouts=userData?.workouts||{};
+  const currentObjectDate = new Date(selectedDate);
+  const daysInMonthCount = new Date(currentObjectDate.getFullYear(), currentObjectDate.getMonth() + 1, 0).getDate();
+
+  function triggerSessionStart() {
+    setSession(workouts[selectedDate] || { date: selectedDate, exercises: [] });
+    setView("session");
+  }
+
+  function appendExerciseTemplate(name) {
+    if (session.exercises.some(e => e.name === name)) return;
+    setSession(p => ({ ...p, exercises: [...(p.exercises || []), { id: uid(), name, sets: [{ reps: 10, weight: 20, checked: false }] }] }));
+  }
+
+  function updateSetInstance(exId, sIdx, key, val) {
+    setSession(p => ({
+      ...p, exercises: p.exercises.map(e => e.id === exId ? {
+        ...e, sets: e.sets.map((s, idx) => idx === sIdx ? { ...s, [key]: key === "checked" ? val : +val } : s)
+      } : e)
+    }));
+  }
+
+  async function saveSessionToCloud() {
+    const updated={...userData,workouts:{...(userData?.workouts||{}),[selectedDate]:session}};
+    await saveData(updated); setView("calendar");
+  }
+
+  return (
+    <div style={{ padding: "0 16px 100px" }} className="fade-in">
+      {view === "calendar" ? (
+        <div>
+          <Card style={{ marginBottom: 14, textAlign: "center" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
+              {Array(daysInMonthCount).fill(null).map((_, i) => {
+                const dayStr = i + 1;
+                const mappingDateKey = `2026-06-${String(dayStr).padStart(2, '0')}`;
+                const matchSelection = selectedDate === mappingDateKey;
+                return (
+                  <div key={dayStr} onClick={() => setSelectedDate(mappingDateKey)} style={{ padding: "8px 0", cursor: "pointer", background: matchSelection ? "rgba(139,92,246,0.2)" : "transparent", borderRadius: 8 }}>
+                    <span style={{ color: workouts[mappingDateKey] ? T.green : T.text, fontWeight: matchSelection ? 800 : 400 }}>{dayStr}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+          <Btn onClick={triggerSessionStart} fullWidth>Start Selected Session</Btn>
+        </div>
+      ) : (
+        <div>
+          <div style={{ display: "flex", gap: 10, marginBottom: 16 }}><Btn variant="ghost" onClick={() => setView("calendar")}>Back</Btn><Btn onClick={saveSessionToCloud} style={{ flex: 1 }}>Finish Workout</Btn></div>
+          {session.exercises?.map(ex => (
+            <Card key={ex.id} style={{ marginBottom: 12 }}>
+              <h4 style={{ marginBottom: 8 }}>{ex.name}</h4>
+              {ex.sets.map((s, idx) => (
+                <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, background: T.bg3, padding: 6, borderRadius: 8 }}>
+                  <span style={{ fontSize: "11px", color: T.muted }}>S{idx + 1}</span>
+                  <input type="number" value={s.reps} onChange={e => updateSetInstance(ex.id, idx, "reps", e.target.value)} style={{ width: 45, background: T.bg, border: "none", color: "#fff", textAlign: "center", borderRadius: 4, padding: 4 }} />
+                  <input type="number" value={s.weight} onChange={e => updateSetInstance(ex.id, idx, "weight", e.target.value)} style={{ width: 50, background: T.bg, border: "none", color: "#fff", textAlign: "center", borderRadius: 4, padding: 4 }} />
+                  <button onClick={() => updateSetInstance(ex.id, idx, "checked", !s.checked)} style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "auto" }}>{s.checked ? "✅" : "⭕"}</button>
+                </div>
+              ))}
+              <Btn small variant="ghost" onClick={() => setSession(p => ({ ...p, exercises: p.exercises.map(e => e.id === ex.id ? { ...e, sets: [...e.sets, { reps: 10, weight: 20, checked: false }] } : e) }))}>+ Add Set</Btn>
+            </Card>
+          ))}
+          <Card style={{ marginTop: 14 }}>
+            <div style={{ display: "flex", gap: 6 }}>{EXERCISES[bodyPart]?.map(n => <button key={n} onClick={() => appendExerciseTemplate(n)} style={{ background: T.bgInput, color: "#fff", padding: "8px 12px", border: "none", borderRadius: "8px", cursor: "pointer" }}>+ {n}</button>)}</div>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AICoachTab({profile}){
+  const [chatLog,setChatLog]=useState([{role:"assistant",content:`Namaste ${profile.name}! Ask any metric prompt. 🔥`}]);
+  const [text,setText]=useState("");
+  const [sending,setSending]=useState(false);
+
+  async function executeSend(){
+    if(!text.trim() || sending) return;
+    const msgNode={role:"user",content:text};
+    setChatLog(p=>[...p,msgNode]); setText(""); setSending(true);
+    const reply=await callAI(chatLog.concat([msgNode]),`FitPro System Logic. User target orientation path: ${profile.goal}. Respond in short natural friendly mixed Hinglish/English tone. Under 60 words total.`);
+    setChatLog(p=>[...p,{role:"assistant",content:reply}]);
+    setSending(false);
+  }
+  return(
+    <div style={{padding:"0 16px 100px"}} className="fade-in">
+      <div style={{height:"240px",overflowY:"auto",marginBottom:12}}>{chatLog.map((m,i)=><div key={i} style={{color:m.role==="user"?T.purple:T.text,marginBottom:8,fontSize:"14px"}}><b>{m.role==="user"?"You":"Coach"}:</b> {m.content}</div>)}</div>
+      <div style={{display:"flex",gap:8}}><input value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&executeSend()} placeholder="Ask prompt..." style={{flex:1,background:T.bg3,border:`1px solid ${T.border}`,borderRadius:T.r,color:T.text,padding:12,outline:"none"}}/><Btn onClick={executeSend} disabled={sending || !text.trim()}>Send</Btn></div>
+    </div>
+  );
+}
+
+function SettingsTab({userData,user}){
+  const trackingRefURL = `${window.location.origin}${window.location.pathname}?ref=${userData?.myReferralCode || ""}`;
+  return(
+    <div style={{padding:"0 16px 100px"}} className="fade-in">
+      <Card style={{marginBottom:10}}><h4>Operator Field:</h4><p style={{color:T.muted,fontSize:"13px"}}>{user.email}</p></Card>
+      <Card style={{marginBottom:10}}><h5>Growth Invitation Asset Code Link:</h5><p style={{wordBreak:"break-all",fontFamily:"monospace",fontSize:"12px",marginTop:6}}>{trackingRefURL}</p></Card>
+    </div>
+  );
+}
+
+// ─── ADMIN ROOT OVERLAY SHEET CONTAINER CONTROL PANEL ────────────────────────
+function AdminPanel({onClose}){
+  const [usersRecordsList,setUsersRecordsList]=useState([]);
+  useEffect(()=>{ db.collection("users").onSnapshot(s=>setUsersRecordsList(s.docs.map(d=>d.data()))); },[]);
+
+  function generateWeeklyPDFReport(targetClient) {
+    const documentWrapperElement = document.createElement("div");
+    documentWrapperElement.style.padding = "35px"; documentWrapperElement.style.background = "#060610"; documentWrapperElement.style.color = "#f1f5f9"; documentWrapperElement.style.fontFamily = "sans-serif";
+    documentWrapperElement.innerHTML = `
+      <h1 style="color:#8b5cf6;border-bottom:2px solid #8b5cf6;padding-bottom:12px;font-size:22px;">FITPRO AI — PREMIUM PROGRESS REPORT CARD</h1>
+      <p style="margin-top:20px;font-size:14px;"><b>Identity Client Target Owner Name:</b> ${targetClient.name || "Meta Element File"}</p>
+      <p style="font-size:14px;"><b>Registered Contact Link Shard:</b> ${targetClient.phone || "No Parameters Save Detected"}</p>
+      <p style="font-size:14px;"><b>Primary Fitness Intent Path:</b> ${targetClient.goal || "Unconfigured Profile"}</p>
+      <p style="margin-top:25px;background:rgba(255,255,255,0.02);padding:15px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);">Current Operational Continuity Streak Baseline: <b>${targetClient.streak || 0} Days Continuous Output</b></p>
+    `;
+    html2pdf().from(documentWrapperElement).set({ margin: 10, filename: `Weekly_Progress_Score_${targetClient.name || "Client"}.pdf`, html2canvas: { backgroundColor: "#060610" } }).save();
+  }
+
+  return(
+    <div style={{position:"fixed",inset:0,background:T.bg,zIndex:100000,padding:"40px 20px",overflowY:"auto"}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:20}}><h3 style={{color:T.purple}}>🛡️ Root System Executive Board</h3><Btn variant="ghost" onClick={onClose} small>✕ Close Console</Btn></div>
+      {usersRecordsList.map((u,i)=>(
+        <Card key={i} style={{marginBottom:10}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><div style={{fontWeight:700}}>{u.name || "Blank Identity Name"}</div><div style={{fontSize:"12px",color:T.muted}}>{u.email} • {u.phone || "No contact parameter input"}</div></div>
+            <Btn variant="secondary" onClick={()=>generateWeeklyPDFReport(u)} style={{padding:"6px 12px",fontSize:"12px"}}>📊 Auto-Generate Weekly Report Card PDF</Btn>
           </div>
-        </header>
-        <main>
-          {activeTab === "home" && <DashboardTab profile={userData} userData={userData} />}
-          {activeTab === "nutrition" && <NutritionTab profile={userData} userData={userData} saveData={d=>db.collection("users").doc(user.uid).set(d,{merge:true})} />}
-          {activeTab === "workout" && <WorkoutTab profile={userData} userData={userData} saveData={d=>db.collection("users").doc(user.uid).set(d,{merge:true})} />}
-          {activeTab === "ai" && <AICoachTab profile={userData} />}
-          {activeTab === "settings" && <SettingsTab userData={userData} user={user} />}
-        </main>
-        <nav style={{ position: "fixed", bottom: "24px", left: "50%", transform: "translateX(-50%)", width: "calc(100% - 32px)", maxWidth: "408px", background: "rgba(18, 18, 29, 0.88)", borderRadius: "20px", display: "flex", padding: "10px 0" }} className="premium-blur">
-          {[{ id: "home", label: "Hub", icon: "🌌" }, { id: "workout", label: "Train", icon: "🏋️" }, { id: "nutrition", label: "Diet", icon: "🍛" }, { id: "ai", label: "Coach", icon: "🤖" }, { id: "settings", label: "Config", icon: "⚙️" }].map(t => <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ flex: 1, background: "none", border: "none", color: activeTab === t.id ? T.accent : T.muted, cursor: "pointer" }}><div>{t.icon}</div><div style={{ fontSize: "9px" }}>{t.label}</div></button>)}
-        </nav>
-      </div>
-    );
-  }
-  ReactDOM.createRoot(document.getElementById('root')).render(<FitPro/>);
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// ─── SYSTEM MASTER INITIALIZER VIEW ROUTING WRAPPER MOUNT ─────────────────────
+function FitPro(){
+  const [user,setUser]=useState(null);
+  const [authLoading,setAuthLoading]=useState(true);
+  const [userData,setUserData]=useState(null);
+  const [activeTab,setActiveTab]=useState("home");
+  const [adminMode,setAdminMode]=useState(false);
+  const [tapCounter,setTapCounter]=useState(0);
+
+  useEffect(()=>{ const unsub=auth.onAuthStateChanged(u=>{setUser(u);setAuthLoading(false);}); return ()=>unsub(); },[]);
+  useEffect(()=>{ if(user){ const unsub=db.collection("users").doc(user.uid).onSnapshot(s=>{setUserData(s.data());}); return ()=>unsub(); } },[user]);
+
+  if(authLoading) return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",color:T.purple,fontWeight:800}}>Booting Platform Shard Layers Matrix...</div>;
+  if(!user) return <AuthScreen onAuth={u=>setUser(u)}/>;
+  if(!userData?.setupDone) return <Onboarding user={user} onDone={p=>setUserData(p)}/>;
+
+  return(
+    <div style={{background:T.bg,minHeight:"100vh",fontFamily:T.font,color:T.text,maxWidth:440,margin:"0 auto",position:"relative",borderLeft:`1px solid ${T.border}`,borderRight:`1px solid ${T.border}`}}>
+      {adminMode&&<AdminPanel onClose={() => setAdminMode(false)} />}
+      
+      {/* WhatsApp External Assist Deep Link Float Trigger Button */}
+      <a href={`https://wa.me/${WHATSAPP}?text=Platform System Log Assistant Node Synchronization Ping Requested.`} target="_blank"
+        style={{position:"fixed",bottom:100,right:20,zIndex:9999,width:50,height:50,borderRadius:"50%",background:"#25D366",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,textDecoration:"none"}}>
+        💬
+      </a>
+
+      {/* Glassmorphic Identification Header Ribbon */}
+      <header style={{position:"sticky",top:0,zIndex:999,background:"rgba(6,6,16,0.85)",backdropFilter:"blur(12px)",borderBottom:`1px solid ${T.border}`,padding:"40px 20px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div onClick={()=>{ setTapCounter(t=> { if(t+1>=5 && user.email===ADMIN_EMAIL) { setAdminMode(true); return 0; } return t+1; }); }} style={{cursor:"pointer"}}>
+          <h2 style={{fontSize:"16px",fontWeight:900}}>FitPro <span style={{color:T.purple}}>AI</span></h2>
+          <p style={{fontSize:"11px",color:T.muted}}>Hey {userData.name}! 👋</p>
+        </div>
+        <span style={{background:"rgba(255,255,255,0.03)",border:`1px solid ${T.border}`,borderRadius:6,padding:"4px 10px",fontSize:"10px",fontWeight:800,color:T.purple}}>ELITE CLIENT INTERFACE</span>
+      </header>
+
+      <main style={{paddingTop:"16px"}}>
+        {activeTab==="home"&&<DashboardTab profile={userData} userData={userData}/>}
+        {activeTab==="nutrition"&&<NutritionTab profile={userData} userData={userData} saveData={d=>db.collection("users").doc(user.uid).set(d,{merge:true})}/>}
+        {activeTab==="workout"&&<WorkoutTab profile={userData} userData={userData} saveData={d=>db.collection("users").doc(user.uid).set(d,{merge:true})}/>}
+        {activeTab==="ai"&&<AICoachTab profile={userData}/>}
+        {activeTab==="settings"&&<SettingsTab userData={userData} user={user}/>}
+      </main>
+
+      {/* Core Dynamic Interface Floating System Nav Bar Container Panel */}
+      <nav style={{position:"fixed",bottom:"24px",left:"50%",transform:"translateX(-50%)",width:"calc(100% - 32px)",maxWidth:408px,background:"rgba(18, 18, 29, 0.9)",border:`1px solid ${T.border}`,borderRadius:"20px",display:"flex",padding:"10px 0",zIndex:99999}}>
+        {[
+          { id: "home", label: "Hub", icon: "🌌" },
+          { id: "workout", label: "Train", icon: "🏋️" },
+          { id: "nutrition", label: "Diet", icon: "🍛" },
+          { id: "ai", label: "Coach", icon: "🤖" },
+          { id: "settings", label: "Config", icon: "⚙️" }
+        ].map(t=>(
+          <button key={t.id} onClick={()=>setActiveTab(t.id)} style={{flex:1,background:"none",border:"none",color:activeTab===t.id?T.purple:T.muted,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+            <span style={{fontSize:"18px"}}>{t.icon}</span>
+            <span style={{fontSize:"9px",fontWeight:800}}>{t.label}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<FitPro/>);
   </script>
 </body>
 </html>
